@@ -1,35 +1,33 @@
-# C:\BlueStacks\Watchdog\BlueStacks-Watchdog.ps1
-
 $instances = @(
     @{
-        Name = "BS-01"
-        File = "C:\Program Files\BlueStacks_nxt\HD-Player.exe"
-        Args = '--instance "Nougat64_1"'
+        Name = "Pie64_6"
+        File = "C:\Program Files\BlueStacks_nxt\HD-Player.exe" 
+        Args = '--instance Pie64_6'
     },
     @{
-        Name = "BS-02"
+        Name = "Pie64_7"
         File = "C:\Program Files\BlueStacks_nxt\HD-Player.exe"
-        Args = '--instance "Nougat64_2"'
+        Args = '--instance Pie64_7'
     },
     @{
-        Name = "BS-03"
+        Name = "Pie64"
         File = "C:\Program Files\BlueStacks_nxt\HD-Player.exe"
-        Args = '--instance "Nougat64_3"'
+        Args = '--instance Pie64'
     },
     @{
-        Name = "BS-04"
+        Name = "Pie64_1"
         File = "C:\Program Files\BlueStacks_nxt\HD-Player.exe"
-        Args = '--instance "Nougat64_4"'
+        Args = '--instance Pie64_1'
     },
     @{
-        Name = "BS-05"
+        Name = "Pie64_8"
         File = "C:\Program Files\BlueStacks_nxt\HD-Player.exe"
-        Args = '--instance "Nougat64_5"'
+        Args = '--instance Pie64_8'
     },
     @{
-        Name = "BS-06"
+        Name = "Pie64_9"
         File = "C:\Program Files\BlueStacks_nxt\HD-Player.exe"
-        Args = '--instance "Nougat64_6"'
+        Args = '--instance Pie64_9'
     }
 )
 
@@ -44,12 +42,22 @@ function Write-Log {
 function Get-InstanceProcess {
     param([string]$InstanceName)
 
+    # Match the complete value following --instance, not merely text
+    # that happens to contain the instance name.
+    $escapedInstanceName = [regex]::Escape($InstanceName)
+
+    $instanceArgumentPattern =
+        '(?i)(?:^|\s)--instance\s+(?:"?' +
+        $escapedInstanceName +
+        '"?)(?=\s|$)'
+
     Get-CimInstance Win32_Process -Filter "Name = 'HD-Player.exe'" |
         Where-Object {
             $_.CommandLine -and
-            $_.CommandLine -match [regex]::Escape($InstanceName)
+            $_.CommandLine -match $instanceArgumentPattern
         }
 }
+
 
 while ($true) {
     foreach ($instance in $instances) {
