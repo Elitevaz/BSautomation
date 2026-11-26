@@ -159,12 +159,33 @@ while ($true) {
             $failureCount++
             $hungCheckCounts[$instance.Name] = $failureCount
 
+            $pidKey = "$($instance.Name):pid"
+
             if ($failureCount -eq 1) {
+                $hungCheckCounts[$pidKey] = $running.ProcessId
                 Write-Log "$($instance.Name) window is unresponsive. Failure 1 of $hungChecksBeforeRecovery."
             }
-            elseif ($failureCount -eq $hungChecksBeforeRecovery) {
-                Write-Log "$($instance.Name) window is unresponsive twice. Recovery would start now; detection-only mode is enabled."
+            elseif ($failureCount -ge $hungChecksBeforeRecovery) {
+                if ($hungCheckCounts[$pidKey] -ne $running.ProcessId) {
+                    # The process changed since the first failure; start checking again.
+                    $hungCheckCounts[$instance.Name] = 1
+                    $hungCheckCounts[$pidKey] = $running.ProcessId
+                    Write-Log "$($instance.Name) process changed. Restarting hang checks."
+                }
+                else {
+                    try {
+                        Write-Log "$($instance.Name) is still unresponsive. Stopping process $($running.ProcessId)."
+            
+                        Stop-Process -Id $running.ProcessId -Force -ErrorAction Stop
+            
+                        $hungCheckCounts[$instance.Name] = 0
+                    }
+                    catch {
+                        Write-Log "Could not stop $($instance.Name): $($_.Exception.Message)"
+                    }
+                }
             }
+
         }
     }
 
